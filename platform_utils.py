@@ -3,6 +3,9 @@ Platform-specific utilities for cross-platform compatibility.
 
 This module provides OS detection and platform-specific utilities
 for Linux, Windows, macOS, and other operating systems.
+
+Author: Jnana Phani A
+Organization: Zenith Tek
 """
 
 import platform

@@ -7,6 +7,10 @@ start transmitting sampling data after power-on or reset by enabling UART Auto S
 
 This tool works on Linux, Windows, macOS, and other operating systems.
 
+Author: Jnana Phani A
+Organization: Zenith Tek
+"""
+
 Usage:
     python configure_auto_start.py <port> [baud_rate]
     python configure_auto_start.py --list-ports

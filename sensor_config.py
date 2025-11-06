@@ -3,6 +3,9 @@ Sensor configuration module.
 
 This module handles sensor configuration operations including
 UART Auto Start mode setup and flash backup.
+
+Author: Jnana Phani A
+Organization: Zenith Tek
 """
 
 import logging

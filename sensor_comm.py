@@ -2,6 +2,9 @@
 Sensor communication module.
 
 This module handles low-level serial communication with the sensor.
+
+Author: Jnana Phani A
+Organization: Zenith Tek
 """
 
 import logging
