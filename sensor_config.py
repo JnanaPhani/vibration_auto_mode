@@ -26,6 +26,10 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+# Author and Organization information
+AUTHOR = "Jnana Phani A"
+ORGANIZATION = "Zenith Tek"
+
 # Constants
 FLASH_BACKUP_TIMEOUT = 5.0
 BACKUP_POLL_INTERVAL = 0.1
@@ -158,6 +162,7 @@ class SensorConfigurator:
             
             logger.info("Sensor configured in UART Auto Start mode successfully")
             logger.info("After power cycle or reset, sensor will automatically start transmitting data")
+            logger.info(f"Configuration tool by {AUTHOR} at {ORGANIZATION}")
             return True
             
         except Exception as e:

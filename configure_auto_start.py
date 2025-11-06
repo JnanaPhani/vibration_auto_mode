@@ -71,6 +71,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Author and Organization information
+AUTHOR = "Jnana Phani A"
+ORGANIZATION = "Zenith Tek"
+
 # Constants
 DEFAULT_BAUD_RATE = 460800
 SUPPORTED_BAUD_RATES = [230400, 460800, 921600]
@@ -121,6 +125,13 @@ def configure_sensor(port: str, baud: int) -> bool:
     """
     comm = None
     try:
+        # Log author and organization information
+        logger.info("=" * 60)
+        logger.info(f"Sensor Auto Start Configuration Tool")
+        logger.info(f"Author: {AUTHOR}")
+        logger.info(f"Organization: {ORGANIZATION}")
+        logger.info("=" * 60)
+        
         # Validate port
         if not PlatformUtils.validate_port(port):
             logger.error(f"Invalid port name: {port}")
@@ -144,6 +155,12 @@ def configure_sensor(port: str, baud: int) -> bool:
         
         # Configure sensor
         success = configurator.configure()
+        
+        if success:
+            logger.info("=" * 60)
+            logger.info("Configuration completed successfully!")
+            logger.info(f"Developed by {AUTHOR} at {ORGANIZATION}")
+            logger.info("=" * 60)
         
         return success
         
