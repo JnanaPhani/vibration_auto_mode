@@ -201,9 +201,9 @@ If flash backup times out:
 
 ## Supported Operating Systems
 
-- ✅ **Linux** (Ubuntu, Debian, Raspberry Pi OS, etc.)
-- ✅ **Windows** (Windows 7, 8, 10, 11)
-- ✅ **macOS** (10.12 and later)
+- **Linux** (Ubuntu, Debian, Raspberry Pi OS, etc.)
+- **Windows** (Windows 7, 8, 10, 11)
+- **macOS** (10.12 and later)
 
 ## Supported Baud Rates
 
