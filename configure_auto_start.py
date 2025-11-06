@@ -9,7 +9,8 @@ This tool works on Linux, Windows, macOS, and other operating systems.
 
 Author: Jnana Phani A
 Organization: Zenith Tek
-"""
+
+Usage:
 
 Usage:
     python configure_auto_start.py <port> [baud_rate]
