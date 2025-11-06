@@ -11,8 +11,6 @@ Author: Jnana Phani A
 Organization: Zenith Tek
 
 Usage:
-
-Usage:
     python configure_auto_start.py <port> [baud_rate]
     python configure_auto_start.py --list-ports
     python configure_auto_start.py --help
