@@ -2,8 +2,8 @@
 
 A **cross-platform, modular** tool to configure M-A542VR1 sensors (A342/A352) in UART Auto Start mode.
 
-**Author:** Jnana Phani A  
-**Organization:** Zenith Tek
+**Author:** [Jnana Phani A](https://phani.zenithtek.in)  
+**Organization:** [Zenith Tek](https://zenithtek.in)
 
 ## Features
 
@@ -215,7 +215,7 @@ If flash backup times out:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-**Copyright (c) 2024 Jnana Phani A, Zenith Tek**
+**Copyright (c) 2024 [Jnana Phani A](https://phani.zenithtek.in), [Zenith Tek](https://zenithtek.in)**
 
 ### Note on Sensor Hardware
 
@@ -223,7 +223,7 @@ This software is based on the M-A542VR1 sensor documentation from Seiko Epson Co
 
 ## Author & Organization
 
-**Author:** Jnana Phani A  
-**Organization:** Zenith Tek
+**Author:** [Jnana Phani A](https://phani.zenithtek.in)  
+**Organization:** [Zenith Tek](https://zenithtek.in)
 
-This tool was developed by Jnana Phani A at Zenith Tek for configuring M-A542VR1 vibration sensors in UART Auto Start mode.
+This tool was developed by [Jnana Phani A](https://phani.zenithtek.in) at [Zenith Tek](https://zenithtek.in) for configuring M-A542VR1 vibration sensors in UART Auto Start mode.

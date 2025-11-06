@@ -4,8 +4,8 @@ Sensor configuration module.
 This module handles sensor configuration operations including
 UART Auto Start mode setup and flash backup.
 
-Author: Jnana Phani A
-Organization: Zenith Tek
+Author: Jnana Phani A (https://phani.zenithtek.in)
+Organization: Zenith Tek (https://zenithtek.in)
 """
 
 import logging
@@ -27,8 +27,8 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 # Author and Organization information
-AUTHOR = "Jnana Phani A"
-ORGANIZATION = "Zenith Tek"
+AUTHOR = "Jnana Phani A (https://phani.zenithtek.in)"
+ORGANIZATION = "Zenith Tek (https://zenithtek.in)"
 
 # Constants
 FLASH_BACKUP_TIMEOUT = 5.0

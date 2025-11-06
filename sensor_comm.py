@@ -3,8 +3,8 @@ Sensor communication module.
 
 This module handles low-level serial communication with the sensor.
 
-Author: Jnana Phani A
-Organization: Zenith Tek
+Author: Jnana Phani A (https://phani.zenithtek.in)
+Organization: Zenith Tek (https://zenithtek.in)
 """
 
 import logging

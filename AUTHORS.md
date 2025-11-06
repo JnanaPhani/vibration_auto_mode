@@ -2,17 +2,17 @@
 
 ## Developer
 
-**Jnana Phani A**
+**[Jnana Phani A](https://phani.zenithtek.in)**
 
 ## Organization
 
-**Zenith Tek**
+**[Zenith Tek](https://zenithtek.in)**
 
 ## Contact
 
 For questions, issues, or contributions related to this project, please contact:
-- Organization: Zenith Tek
-- Developer: Jnana Phani A
+- Organization: [Zenith Tek](https://zenithtek.in)
+- Developer: [Jnana Phani A](https://phani.zenithtek.in)
 
 ## Project Information
 

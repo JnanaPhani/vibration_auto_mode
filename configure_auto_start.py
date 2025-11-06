@@ -7,8 +7,8 @@ start transmitting sampling data after power-on or reset by enabling UART Auto S
 
 This tool works on Linux, Windows, macOS, and other operating systems.
 
-Author: Jnana Phani A
-Organization: Zenith Tek
+Author: Jnana Phani A (https://phani.zenithtek.in)
+Organization: Zenith Tek (https://zenithtek.in)
 
 Usage:
     python configure_auto_start.py <port> [baud_rate]
@@ -71,8 +71,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Author and Organization information
-AUTHOR = "Jnana Phani A"
-ORGANIZATION = "Zenith Tek"
+AUTHOR = "Jnana Phani A (https://phani.zenithtek.in)"
+ORGANIZATION = "Zenith Tek (https://zenithtek.in)"
 
 # Constants
 DEFAULT_BAUD_RATE = 460800
