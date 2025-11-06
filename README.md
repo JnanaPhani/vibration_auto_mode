@@ -7,11 +7,11 @@ A **cross-platform, modular** tool to configure M-A542VR1 sensors (A342/A352) in
 
 ## Features
 
-- ✅ **Cross-platform**: Works on Linux, Windows, macOS, and other operating systems
-- ✅ **Modular design**: Separated into logical modules for easy maintenance
-- ✅ **Port detection**: Automatically lists available serial ports
-- ✅ **OS-specific handling**: Handles platform differences automatically
-- ✅ **Error handling**: Comprehensive error messages and troubleshooting help
+- **Cross-platform**: Works on Linux, Windows, macOS, and other operating systems
+- **Modular design**: Separated into logical modules for easy maintenance
+- **Port detection**: Automatically lists available serial ports
+- **OS-specific handling**: Handles platform differences automatically
+- **Error handling**: Comprehensive error messages and troubleshooting help
 
 ## Project Structure
 
