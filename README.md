@@ -219,7 +219,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### Note on Sensor Hardware
 
-This software is based on the M-A542VR1 sensor documentation from Seiko Epson Corporation. 
+This software is based on the M-A542VR1 sensor documentation from Seiko Epson Corporation. The sensor hardware and firmware are proprietary to Seiko Epson Corporation.
 
 ## Author & Organization
 
