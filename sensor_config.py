@@ -11,7 +11,7 @@ Organization: Zenith Tek (https://zenithtek.in)
 import logging
 import sys
 import time
-from typing import List
+from typing import Dict, List, Optional
 
 # Import sensor communication module
 try:
@@ -34,48 +34,138 @@ ORGANIZATION = "Zenith Tek (https://zenithtek.in)"
 FLASH_BACKUP_TIMEOUT = 5.0
 BACKUP_POLL_INTERVAL = 0.1
 
+PROD_ID_REGISTERS = (0x6A, 0x6C, 0x6E, 0x70)
+SERIAL_REGISTERS = (0x74, 0x76, 0x78, 0x7A)
+
+PRODUCT_ID_ALIASES: Dict[str, str] = {
+    "A342VD10": "M-A542VR1",
+}
+
 
 class SensorConfigurator:
     """Sensor configuration operations."""
 
     def __init__(self, comm: SensorCommunication):
-        """Initialize configurator.
-        
-        Args:
-            comm: SensorCommunication instance
-        """
         self.comm = comm
+
+    def _write_commands(self, commands: List[List[int]]) -> None:
+        self.comm.send_commands(commands)
 
     def reset_sensor(self) -> None:
         """Send reset commands to sensor."""
-        reset_commands = [
-            [0, 0xFF, 0xFF, 0x0D],  # Reset spell 3 times
-            [0, 0xFF, 0xFF, 0x0D],
-            [0, 0xFF, 0xFF, 0x0D],
-        ]
-        self.comm.send_commands(reset_commands)
+        self._write_commands(
+            [
+                [0, 0xFF, 0xFF, 0x0D],
+                [0, 0xFF, 0xFF, 0x0D],
+                [0, 0xFF, 0xFF, 0x0D],
+            ]
+        )
         logger.debug("Sensor reset commands sent")
 
+    def _wait_until_ready(self, timeout: float = 3.0) -> bool:
+        start = time.time()
+        while time.time() - start < timeout:
+            try:
+                result = self.comm.send_commands(
+                    [
+                        [0, 0xFE, 0x01, 0x0D],
+                        [4, 0x0A, 0x00, 0x0D],
+                    ]
+                )
+                if len(result) >= 4:
+                    glob_cmd = (result[-3] << 8) | result[-2]
+                    if (glob_cmd & 0x0400) == 0:
+                        return True
+            except TimeoutError:
+                logger.debug("Waiting for sensor ready... (timeout)")
+            except Exception:
+                logger.debug("Transient error while waiting for ready", exc_info=True)
+            time.sleep(0.05)
+        logger.warning("Timed out waiting for sensor ready state")
+        return False
+
+    def _read_word(self, address: int, window: int) -> Optional[int]:
+        try:
+            result = self.comm.send_commands(
+                [
+                    [0, 0xFE, window & 0xFF, 0x0D],
+                    [4, address & 0xFF, 0x00, 0x0D],
+                ]
+            )
+            if len(result) < 4:
+                return None
+            msb = result[-3]
+            lsb = result[-2]
+            return (msb << 8) | lsb
+        except Exception:
+            logger.debug("Failed to read register 0x%02X", address, exc_info=True)
+            return None
+
+    @staticmethod
+    def _decode_ascii_words(words: List[int], little_endian: bool = True) -> str:
+        chars: List[str] = []
+        for word in words:
+            low = word & 0xFF
+            high = (word >> 8) & 0xFF
+            order = (low, high) if little_endian else (high, low)
+            for byte in order:
+                if byte != 0x00:
+                    chars.append(chr(byte))
+        return "".join(chars).strip()
+
+    def detect_identity(self) -> Optional[dict]:
+        logger.info("Reading product and serial number registers")
+
+        product_words = []
+        for reg in PROD_ID_REGISTERS:
+            word = self._read_word(reg, 0x01)
+            if word is None:
+                logger.error("Failed to read product ID register 0x%02X", reg)
+                return None
+            product_words.append(word)
+        logger.info(
+            "Product ID raw words: %s",
+            " ".join(f"0x{word:04X}" for word in product_words),
+        )
+        product_id_raw = self._decode_ascii_words(product_words, little_endian=True)
+        product_id = PRODUCT_ID_ALIASES.get(product_id_raw, product_id_raw)
+
+        serial_words = []
+        for reg in SERIAL_REGISTERS:
+            word = self._read_word(reg, 0x01)
+            if word is None:
+                logger.error("Failed to read serial register 0x%02X", reg)
+                return None
+            serial_words.append(word)
+        logger.info(
+            "Serial number raw words: %s",
+            " ".join(f"0x{word:04X}" for word in serial_words),
+        )
+        serial_number = self._decode_ascii_words(serial_words, little_endian=True)
+
+        self._write_commands([[0, 0xFE, 0x00, 0x0D]])
+        return {
+            "product_id": product_id or "",
+            "product_id_raw": product_id_raw or "",
+            "serial_number": serial_number or "",
+            "product_words": product_words,
+            "serial_words": serial_words,
+        }
+
     def set_uart_auto_start(self) -> bool:
-        """Set UART_CTRL register to enable UART Auto Start mode.
-        
-        Sets both AUTO_START (bit [1]) and UART_AUTO (bit [0]) to 1.
-        
-        Returns:
-            True if successful, False otherwise
-        """
         try:
             self.reset_sensor()
-            
+            time.sleep(0.1)
+
             commands = [
-                [0, 0xFE, 0x01, 0x0D],  # Window 1
-                [0, 0x88, 0x03, 0x0D],  # UART_CTRL: AUTO_START=1, UART_AUTO=1
+                [0, 0xFE, 0x01, 0x0D],
+                [0, 0x88, 0x03, 0x0D],
             ]
-            self.comm.send_commands(commands)
+            self._write_commands(commands)
             logger.info("UART_CTRL register set to 0x03 (AUTO_START=1, UART_AUTO=1)")
             return True
         except Exception as e:
-            logger.error(f"Failed to set UART_CTRL: {e}")
+            logger.error("Failed to set UART_CTRL: %s", e)
             return False
 
     def flash_backup(self) -> bool:
@@ -146,20 +236,12 @@ class SensorConfigurator:
             return False
 
     def configure(self) -> bool:
-        """Configure sensor in UART Auto Start mode.
-        
-        Returns:
-            True if configuration successful, False otherwise
-        """
+        """Configure sensor in UART Auto Start mode."""
         try:
-            # Step 1: Set UART_CTRL to enable Auto Start
             if not self.set_uart_auto_start():
                 return False
-            
-            # Step 2: Perform flash backup
             if not self.flash_backup():
                 return False
-            
             logger.info("Sensor configured in UART Auto Start mode successfully")
             logger.info("After power cycle or reset, sensor will automatically start transmitting data")
             logger.info(f"Configuration tool by {AUTHOR} at {ORGANIZATION}")
@@ -167,5 +249,142 @@ class SensorConfigurator:
             
         except Exception as e:
             logger.error(f"Configuration failed: {e}")
+            return False
+
+    def software_reset(self) -> bool:
+        try:
+            self._write_commands(
+                [
+                    [0, 0xFE, 0x01, 0x0D],
+                    [0, 0x8A, 0x80, 0x0D],
+                ]
+            )
+            logger.info("Software reset command issued; waiting for reboot")
+            return self._wait_until_ready(timeout=7.0)
+        except Exception as exc:
+            logger.error("Software reset failed: %s", exc)
+            return False
+
+    def flash_test(self) -> bool:
+        try:
+            self._write_commands(
+                [
+                    [0, 0xFE, 0x01, 0x0D],
+                    [0, 0x83, 0x08, 0x0D],
+                ]
+            )
+            logger.info("Flash test command issued")
+
+            start = time.time()
+            while time.time() - start < FLASH_BACKUP_TIMEOUT:
+                result = self.comm.send_commands(
+                    [
+                        [0, 0xFE, 0x01, 0x0D],
+                        [4, 0x02, 0x00, 0x0D],
+                    ]
+                )
+                if len(result) >= 4:
+                    status = (result[-3] << 8) | result[-2]
+                    if (status & 0x0400) == 0:
+                        logger.debug("FLASH_TEST complete (MSC_CTRL=0x%04X)", status)
+                        break
+                time.sleep(BACKUP_POLL_INTERVAL)
+            else:
+                logger.error("Flash test timeout")
+                return False
+
+            diag_result = self.comm.send_commands(
+                [
+                    [0, 0xFE, 0x00, 0x0D],
+                    [4, 0x04, 0x00, 0x0D],
+                ]
+            )
+            if len(diag_result) >= 4:
+                diag_low = diag_result[-2]
+                if diag_low & 0x04:
+                    logger.error("FLASH_ERR flag set after flash test")
+                    return False
+            self._wait_until_ready(timeout=2.0)
+            logger.info("Flash test completed successfully")
+            return True
+        except Exception as exc:
+            logger.error("Flash test failed: %s", exc)
+            return False
+
+    def exit_auto_mode(self, persist_disable_auto: bool = False) -> bool:
+        try:
+            logger.info("Requesting vibration sensor to exit UART Auto Mode")
+            self._write_commands(
+                [
+                    [0, 0xFE, 0x00, 0x0D],
+                    [0, 0x83, 0x02, 0x0D],
+                ]
+            )
+            time.sleep(0.05)
+
+            result = self.comm.send_commands(
+                [
+                    [0, 0xFE, 0x00, 0x0D],
+                    [4, 0x02, 0x00, 0x0D],
+                ]
+            )
+
+            if len(result) < 4:
+                logger.error("MODE_CTRL read response incomplete")
+                return False
+
+            mode_register = (result[-3] << 8) | result[-2]
+            if (mode_register & 0x0400) == 0:
+                logger.error("Sensor did not report configuration mode (MODE_CTRL=0x%04X)", mode_register)
+                return False
+            logger.info("Sensor reports configuration mode (MODE_CTRL=0x%04X)", mode_register)
+
+            self._write_commands(
+                [
+                    [0, 0xFE, 0x01, 0x0D],
+                    [0, 0x88, 0x00, 0x0D],
+                ]
+            )
+            logger.info("UART_CTRL cleared (0x88 -> 0x00)")
+
+            if persist_disable_auto:
+                logger.info("Persisting UART auto disable state via flash backup")
+                if not self.flash_backup():
+                    logger.error("Failed to persist UART auto disable state")
+                    return False
+
+            self._write_commands([[0, 0xFE, 0x00, 0x0D]])
+            return True
+
+        except Exception as exc:
+            logger.error("Failed to exit auto mode: %s", exc)
+            return False
+
+    def full_reset(self, persist_disable_auto: bool = True) -> bool:
+        logger.info(
+            "Starting vibration sensor reset (exit auto -> flash test -> software reset, persist disable=%s)",
+            persist_disable_auto,
+        )
+        try:
+            if persist_disable_auto:
+                if not self.exit_auto_mode(persist_disable_auto=True):
+                    return False
+            else:
+                self._write_commands([[0, 0xFE, 0x00, 0x0D]])
+
+            self.reset_sensor()
+            time.sleep(0.1)
+
+            if not self.flash_test():
+                logger.warning("Flash test reported an error; continuing with reset")
+
+            if not self.software_reset():
+                return False
+
+            logger.info("Vibration sensor reset sequence completed. Allowing stabilization")
+            time.sleep(0.8)
+            return True
+        except Exception as exc:
+            logger.error("Full reset sequence failed: %s", exc)
             return False
 

@@ -113,67 +113,206 @@ def validate_baud_rate(baud: int) -> bool:
 
 
 def configure_sensor(port: str, baud: int) -> bool:
-    """Configure sensor in UART Auto Start mode.
-    
-    Args:
-        port: Serial port path
-        baud: Baud rate
-        
-    Returns:
-        True if successful, False otherwise
-    """
-    comm = None
+    comm: Optional[SensorCommunication] = None
     try:
-        # Log author and organization information
-        logger.info("=" * 60)
-        logger.info(f"Sensor Auto Start Configuration Tool")
-        logger.info(f"Author: {AUTHOR}")
-        logger.info(f"Organization: {ORGANIZATION}")
-        logger.info("=" * 60)
-        
-        # Validate port
+        logger.info("=" * 64)
+        logger.info("Vibration Sensor Auto Start Configuration Tool")
+        logger.info("Author: %s", AUTHOR)
+        logger.info("Organization: %s", ORGANIZATION)
+        logger.info("=" * 64)
+
         if not PlatformUtils.validate_port(port):
-            logger.error(f"Invalid port name: {port}")
-            logger.error(f"Valid port examples: {PlatformUtils.format_port_examples()}")
+            logger.error("Invalid port: %s", port)
+            logger.error("Examples: %s", PlatformUtils.format_port_examples())
             return False
-        
-        # Validate baud rate
+
         if not validate_baud_rate(baud):
-            logger.warning(f"Baud rate {baud} is not in recommended list: {SUPPORTED_BAUD_RATES}")
-            logger.warning("Continuing anyway...")
-        
-        # Create communication object
+            logger.warning("Baud %s not in recommended list %s", baud, SUPPORTED_BAUD_RATES)
+            logger.warning("Continuing using provided baud rate...")
+
         comm = SensorCommunication(port, baud)
-        
-        # Open connection
-        logger.info(f"Connecting to {port} at {baud} baud")
+        logger.info("Connecting to %s at %d baud", port, baud)
         comm.open()
-        
-        # Create configurator
+
         configurator = SensorConfigurator(comm)
-        
-        # Configure sensor
         success = configurator.configure()
-        
+
         if success:
-            logger.info("=" * 60)
-            logger.info("Configuration completed successfully!")
-            logger.info(f"Developed by {AUTHOR} at {ORGANIZATION}")
-            logger.info("=" * 60)
-        
+            logger.info("=" * 64)
+            logger.info("Configuration succeeded!")
+            logger.info("Developed by %s at %s", AUTHOR, ORGANIZATION)
+            logger.info("=" * 64)
         return success
-        
-    except PermissionError as e:
-        logger.error(f"Permission denied: {e}")
+
+    except PermissionError as exc:
+        logger.error("Permission denied: %s", exc)
         logger.error("\n" + PlatformUtils.get_port_permission_help())
         return False
-    except FileNotFoundError as e:
-        logger.error(f"Port not found: {e}")
-        logger.error(f"Port '{port}' does not exist")
-        logger.error("Use --list-ports to see available ports")
+    except FileNotFoundError as exc:
+        logger.error("Port not found: %s", exc)
+        logger.error("Use --list-ports to view available ports")
         return False
-    except Exception as e:
-        logger.error(f"Configuration failed: {e}")
+    except Exception as exc:
+        logger.error("Configuration failed: %s", exc)
+        return False
+    finally:
+        if comm:
+            comm.close()
+
+
+def detect_sensor_identity(port: str, baud: int) -> bool:
+    comm: Optional[SensorCommunication] = None
+    try:
+        logger.info("=" * 64)
+        logger.info("Vibration Sensor Identity Detection")
+        logger.info("Author: %s", AUTHOR)
+        logger.info("Organization: %s", ORGANIZATION)
+        logger.info("=" * 64)
+
+        if not PlatformUtils.validate_port(port):
+            logger.error("Invalid port: %s", port)
+            logger.error("Examples: %s", PlatformUtils.format_port_examples())
+            return False
+
+        if not validate_baud_rate(baud):
+            logger.warning("Baud %s not in recommended list %s", baud, SUPPORTED_BAUD_RATES)
+            logger.warning("Continuing using provided baud rate...")
+
+        comm = SensorCommunication(port, baud)
+        logger.info("Connecting to %s at %d baud", port, baud)
+        comm.open()
+
+        configurator = SensorConfigurator(comm)
+        identity = configurator.detect_identity()
+        if identity is None:
+            logger.error("Failed to read sensor identity registers")
+            return False
+
+        product_id = identity.get("product_id", "").strip() or "(unknown)"
+        serial_number = identity.get("serial_number", "").strip() or "(unknown)"
+        product_words = identity.get("product_words", [])
+        serial_words = identity.get("serial_words", [])
+
+        print("\nDetected Sensor Identity:\n")
+        print(f"  Product ID   : {product_id}")
+        print(f"  Serial Number: {serial_number}\n")
+        if product_words:
+            print(
+                "  Product words: "
+                + " ".join(f"0x{word:04X}" for word in product_words)
+            )
+        if serial_words:
+            print(
+                "  Serial words : "
+                + " ".join(f"0x{word:04X}" for word in serial_words)
+            )
+        print()
+        return True
+
+    except PermissionError as exc:
+        logger.error("Permission denied: %s", exc)
+        logger.error("\n" + PlatformUtils.get_port_permission_help())
+        return False
+    except FileNotFoundError as exc:
+        logger.error("Port not found: %s", exc)
+        logger.error("Use --list-ports to view available ports")
+        return False
+    except Exception as exc:
+        logger.error("Sensor identity detection failed: %s", exc)
+        return False
+    finally:
+        if comm:
+            comm.close()
+
+
+def exit_auto_mode_cli(port: str, baud: int, persist_disable_auto: bool) -> bool:
+    comm: Optional[SensorCommunication] = None
+    try:
+        logger.info("=" * 64)
+        logger.info("Vibration Sensor Auto Mode Exit Utility")
+        logger.info("Author: %s", AUTHOR)
+        logger.info("Organization: %s", ORGANIZATION)
+        logger.info("=" * 64)
+
+        if not PlatformUtils.validate_port(port):
+            logger.error("Invalid port: %s", port)
+            logger.error("Examples: %s", PlatformUtils.format_port_examples())
+            return False
+
+        if not validate_baud_rate(baud):
+            logger.warning("Baud %s not in recommended list %s", baud, SUPPORTED_BAUD_RATES)
+            logger.warning("Continuing using provided baud rate...")
+
+        comm = SensorCommunication(port, baud)
+        logger.info("Connecting to %s at %d baud", port, baud)
+        comm.open()
+
+        configurator = SensorConfigurator(comm)
+        success = configurator.exit_auto_mode(persist_disable_auto=persist_disable_auto)
+
+        if success:
+            logger.info("=" * 64)
+            logger.info("Auto mode disabled successfully")
+            if persist_disable_auto:
+                logger.info("UART auto bits persisted via flash backup")
+            logger.info("=" * 64)
+        return success
+
+    except PermissionError as exc:
+        logger.error("Permission denied: %s", exc)
+        logger.error("\n" + PlatformUtils.get_port_permission_help())
+        return False
+    except FileNotFoundError as exc:
+        logger.error("Port not found: %s", exc)
+        logger.error("Use --list-ports to view available ports")
+        return False
+    except Exception as exc:
+        logger.error("Exit auto mode failed: %s", exc)
+        return False
+    finally:
+        if comm:
+            comm.close()
+
+
+def reset_sensor_cli(port: str, baud: int) -> bool:
+    comm: Optional[SensorCommunication] = None
+    try:
+        logger.info("=" * 64)
+        logger.info("Vibration Sensor Reset Utility")
+        logger.info("Author: %s", AUTHOR)
+        logger.info("Organization: %s", ORGANIZATION)
+        logger.info("=" * 64)
+
+        if not PlatformUtils.validate_port(port):
+            logger.error("Invalid port: %s", port)
+            logger.error("Examples: %s", PlatformUtils.format_port_examples())
+            return False
+
+        if not validate_baud_rate(baud):
+            logger.warning("Baud %s not in recommended list %s", baud, SUPPORTED_BAUD_RATES)
+            logger.warning("Continuing using provided baud rate...")
+
+        comm = SensorCommunication(port, baud)
+        logger.info("Connecting to %s at %d baud", port, baud)
+        comm.open()
+
+        configurator = SensorConfigurator(comm)
+        if configurator.full_reset():
+            logger.info("Full reset complete. Auto mode bits cleared and persisted.")
+            return True
+        logger.error("Full reset failed")
+        return False
+
+    except PermissionError as exc:
+        logger.error("Permission denied: %s", exc)
+        logger.error("\n" + PlatformUtils.get_port_permission_help())
+        return False
+    except FileNotFoundError as exc:
+        logger.error("Port not found: %s", exc)
+        logger.error("Use --list-ports to view available ports")
+        return False
+    except Exception as exc:
+        logger.error("Reset failed: %s", exc)
         return False
     finally:
         if comm:
@@ -226,15 +365,58 @@ Examples:
         dest="baud",
         help=f"Baud rate (default: {DEFAULT_BAUD_RATE})"
     )
+    parser.add_argument(
+        "--exit-auto",
+        action="store_true",
+        help="Stop streaming and return the sensor to configuration mode",
+    )
+    parser.add_argument(
+        "--persist-disable-auto",
+        action="store_true",
+        help="After exiting Auto Mode, save the cleared UART_AUTO/AUTO_START bits via flash backup",
+    )
+    parser.add_argument(
+        "--detect",
+        action="store_true",
+        help="Read and print the Product ID and Serial Number from the connected sensor",
+    )
+    parser.add_argument(
+        "--reset",
+        action="store_true",
+        help="Send the full reset sequence (exit auto, flash test, software reset)",
+    )
     
     args = parser.parse_args()
     
-    # Handle list ports request
     if args.list_ports:
         list_available_ports()
         return 0
-    
-    # Check if port is provided
+
+    if args.exit_auto:
+        if not args.port:
+            parser.print_help()
+            print("\nError: port argument is required when using --exit-auto.")
+            return 1
+        return (
+            0
+            if exit_auto_mode_cli(args.port, args.baud, args.persist_disable_auto)
+            else 1
+        )
+
+    if args.detect:
+        if not args.port:
+            parser.print_help()
+            print("\nError: port argument is required when using --detect.")
+            return 1
+        return 0 if detect_sensor_identity(args.port, args.baud) else 1
+
+    if args.reset:
+        if not args.port:
+            parser.print_help()
+            print("\nError: port argument is required when using --reset.")
+            return 1
+        return 0 if reset_sensor_cli(args.port, args.baud) else 1
+
     if not args.port:
         parser.print_help()
         print("\nError: Port is required")
